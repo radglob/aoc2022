@@ -1,47 +1,46 @@
 use std::fs;
-
-#[derive(Debug)]
-struct Directory<'a> {
-    name: String,
-    children: Vec<Directory<'a>>,
-    files: Vec<File>,
-    parent: Box<Option<&'a Directory<'a>>>,
-}
-
-#[derive(Debug)]
-struct File {
-    name: String,
-    size: usize
-}
-
-fn handle_command(command_string: &str) {
-}
-
-fn parse_directory(input: &str) -> Directory {
-    let mut lines = input.lines();
-    lines.next();
-    let mut current_directory: Directory = Directory { name: "/".to_string(), children: vec![], files: vec![], parent: Box::new(None) };
-
-    while let Some(line) = lines.next() {
-        let mut cs = line.chars();
-        if let Some('$') = cs.next() {
-            cs.next();
-            let command_string: String = cs.collect();
-            handle_command(&command_string);
-            println!("{}", command_string);
-        } else {
-            // Either a file or directory.
-            println!("{}", line);
-        }
-    }
-
-    current_directory
-}
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 fn main() -> Result<(), std::io::Error> {
-    let contents: String = fs::read_to_string("src/basic_input.txt")?;
-    let directory: Directory = parse_directory(&contents);
-    println!("{:?}", directory);
+    let contents: String = fs::read_to_string("src/input.txt")?;
+    let mut sizes = HashMap::new();
+    let mut affected = Vec::new();
+
+    for line in contents.lines() {
+        if line.starts_with("$ ls") || line.starts_with("dir") {
+            continue;
+        }
+
+        let parts: Vec<_> = line.split_whitespace().collect();
+        match parts[..] {
+            ["$", "cd", ".."] => {
+                affected.pop();
+            }
+            ["$", "cd", name] => {
+                affected.push(name);
+            }
+            [size, _name] => {
+                let size: u32 = size.parse().unwrap();
+                for idx in 0..affected.len() {
+                    let path = PathBuf::from_iter(&affected[..=idx]);
+                    *sizes.entry(path).or_insert(0) += size;
+                }
+            }
+            _ => {}
+        }
+    };
+
+    // let sizes: u32 = sizes.into_values().filter(|size| *size <= 100_000).sum();
+    // println!("{}", sizes);
+    let disk = 70_000_000;
+    let needed = 30_000_000;
+    let root = sizes.get(&PathBuf::from("/")).unwrap();
+    let available = disk - root;
+
+    let sizes = sizes.into_values().filter(|size| available + size >= needed).min().unwrap();
+    println!("{}", sizes);
+    
     Ok(())
 }
 
