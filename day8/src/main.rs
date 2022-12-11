@@ -50,7 +50,7 @@ fn visible(grid: &Grid, x: usize, y: usize) -> bool {
 fn viewing_distance_top(grid: &Grid, x: usize, y: usize) -> u32 {
     let height = grid[x][y];
     let mut distance = 0;
-    for i in (x-1)..=0 {
+    for i in (0..x).rev() {
         distance += 1;
         if height <= grid[i][y] {
             break;
@@ -74,7 +74,7 @@ fn viewing_distance_bottom(grid: &Grid, x: usize, y: usize) -> u32 {
 fn viewing_distance_left(grid: &Grid, x: usize, y: usize) -> u32 {
     let height = grid[x][y];
     let mut distance = 0;
-    for j in (y-1)..=0 {
+    for j in (0..y).rev() {
         distance += 1;
         if height <= grid[x][j] {
             break;
@@ -96,9 +96,11 @@ fn viewing_distance_right(grid: &Grid, x: usize, y: usize) -> u32 {
 }
 
 fn viewing_distance(grid: &Grid, x: usize, y: usize) -> u32 {
+    let max_x: usize = grid.len() - 1;
+    let max_y: usize = grid.first().unwrap().len() - 1;
     match (x, y) {
-        (x, _) if x == 0 || x == grid.len() - 1 => 0,
-        (_, y) if y == 0 || y == grid[0].len() - 1 => 0,
+        (x, _) if x == 0 || x == max_x => 0,
+        (_, y) if y == 0 || y == max_y => 0,
         _ => {
             viewing_distance_left(grid, x, y)
                 * viewing_distance_right(grid, x, y)
@@ -109,17 +111,16 @@ fn viewing_distance(grid: &Grid, x: usize, y: usize) -> u32 {
 }
 
 fn main() {
-    let contents = include_str!("basic_input.txt");
+    let contents = include_str!("input.txt");
     let grid = parse_grid(contents);
     let mut max_viewing_distance = 0;
     for x in 0..grid.len() {
         for y in 0..grid[x].len() {
             let distance = viewing_distance(&grid, x, y);
-            println!("Viewing distance from ({},{}) is {}", x, y, distance);
             if distance > max_viewing_distance {
                 max_viewing_distance = distance
             }
         }
     }
-    println!("{:?}", max_viewing_distance);
+    println!("max viewing distance: {}", max_viewing_distance);
 }
